@@ -1,21 +1,18 @@
-import zmq
-import random
-import time
+import grpc
+from concurrent import futures
+import playback_pb2
+import playback_pb2_grpc
 
-context = zmq.Context()
-socket = context.socket(zmq.REP)  # Reply socket
-socket.bind("tcp://*:5555")
+class PlaybackService(playback_pb2_grpc.PlaybackServiceServicer):
+    def PlaySong(self, request, context):
+        return playback_pb2.PlaybackResponse(message=f"Playing {request.song_name}")
 
-while True:
-    # Receive request from client
-    message = socket.recv_string()
-    print(f"Received request: {message}")
-    
-    if message == "quit":
-        print("Shutting down server.")
-        break
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    playback_pb2_grpc.add_PlaybackServiceServicer_to_server(PlaybackService(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    server.wait_for_termination()
 
-    # Simulate some work
-    time.sleep(2)
-    reply = f"Random number: {random.randint(1, 100)}"
-    socket.send_string(reply)
+if __name__ == "__main__":
+    serve()
