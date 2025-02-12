@@ -1,13 +1,9 @@
-import zmq
+import grpc
+import playback_pb2
+import playback_pb2_grpc
 
-context = zmq.Context()
-socket = context.socket(zmq.REQ)  # Request socket
-socket.connect("tcp://localhost:5555")
+channel = grpc.insecure_channel('localhost:50051')
+stub = playback_pb2_grpc.PlaybackServiceStub(channel)
 
-# Send request to server
-socket.send_string("Generate a random number")
-response = socket.recv_string()
-print(f"Server replied: {response}")
-
-# Send a quit message
-socket.send_string("quit")
+response = stub.PlaySong(playback_pb2.PlaybackRequest(song_name="Bohemian Rhapsody"))
+print(f"Server Response: {response.message}")
